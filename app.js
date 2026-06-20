@@ -166,13 +166,47 @@ function renderSegmentComparison(items) {
   }).join("");
 }
 
+function renderPieChart(id, items, definitions) {
+  const counts = definitions.map(({ name }) =>
+    items.filter((item) => normalizeStage(item) === normalizeStage(name)).length);
+  const total = counts.reduce((sum, c) => sum + c, 0) || 1;
+  const pcts = counts.map((c) => ((c / total) * 100));
+
+  let cumulativePct = 0;
+  const gradientParts = [];
+  definitions.forEach(({ color }, i) => {
+    const start = cumulativePct;
+    cumulativePct += pcts[i];
+    gradientParts.push(`${color} ${start}% ${cumulativePct}%`);
+  });
+
+  const legendHtml = definitions.map(({ name, color }, i) =>
+    `<div class="pie-legend-item">
+      <span class="pie-legend-dot" style="background:${color}"></span>
+      <span class="pie-legend-label">${escapeHtml(name)}</span>
+      <strong>${pcts[i].toFixed(1)}%</strong>
+      <span class="muted">(${number.format(counts[i])})</span>
+    </div>`).join("");
+
+  byId(id).innerHTML = `
+    <div class="pie-wrapper">
+      <div class="pie-donut" style="background:conic-gradient(${gradientParts.join(", ")})">
+        <div class="pie-hole">
+          <strong>${number.format(counts.reduce((a, b) => a + b, 0))}</strong>
+          <span>total</span>
+        </div>
+      </div>
+      <div class="pie-legend">${legendHtml}</div>
+    </div>`;
+}
+
 function renderApproved(items, comparisonItems) {
   const combined = (item) => item.uniqueValue + item.recurringValue;
   byId("approved-summary").textContent = `${number.format(items.length)} aprovados · ${currency.format(items.reduce((sum, item) => sum + combined(item), 0))}`;
   renderFixedBars("approved-segments", comparisonItems.map((item) => item.segment), segments);
-  renderFixedBars("approved-person-types", items.map((item) => item.personType), [
-    { name: "Pessoa física", color: "#0ea5e9" },
-    { name: "Pessoa jurídica", color: "#8b5cf6" },
+  renderPieChart("approved-person-types", items.map((item) => item.personType), [
+    { name: "Pessoa física", color: "#9b59b6" },
+    { name: "Pessoa jurídica", color: "#1a3a5c" },
   ]);
 
   const installmentRows = Array.from({ length: 12 }, (_, index) => {
