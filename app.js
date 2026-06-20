@@ -252,15 +252,24 @@ function renderValueBars(id, items, definitions) {
     </div>`).join("") || '<span class="muted">Sem dados.</span>';
 }
 
+function addNaoInformado(itemValues, definitions) {
+  const knownNames = new Set(definitions.map((d) => normalizeStage(d.name)));
+  const hasUnknown = itemValues.some((v) => !knownNames.has(normalizeStage(v)));
+  if (!hasUnknown) return definitions;
+  return [...definitions, { name: "Não informado", color: "#94a3b8" }];
+}
+
 function renderApproved(items, comparisonItems) {
   const combined = (item) => item.uniqueValue + item.recurringValue;
   byId("approved-summary").textContent = `${number.format(items.length)} aprovados · ${currency.format(items.reduce((sum, item) => sum + combined(item), 0))}`;
-  renderPieChart("approved-segments-pie", comparisonItems.map((item) => item.segment), segments);
-  renderValueBars("approved-segments-bars", comparisonItems, segments);
-  renderPieChart("approved-person-types", items.map((item) => item.personType), [
+  const segDefs = addNaoInformado(comparisonItems.map((i) => i.segment), segments);
+  renderPieChart("approved-segments-pie", comparisonItems.map((item) => item.segment), segDefs);
+  renderValueBars("approved-segments-bars", comparisonItems, segDefs);
+  const personDefs = addNaoInformado(items.map((i) => i.personType), [
     { name: "Pessoa física", color: "#9b59b6" },
     { name: "Pessoa jurídica", color: "#1a3a5c" },
   ]);
+  renderPieChart("approved-person-types", items.map((item) => item.personType), personDefs);
 
   const installmentRows = Array.from({ length: 12 }, (_, index) => {
     const installment = index + 1;
@@ -275,10 +284,11 @@ function renderApproved(items, comparisonItems) {
       <div class="dual-track"><div class="dual-fill" style="--bar-width:${(row.value / maxValue) * 100}%;--bar-color:#10b981"></div><span class="dual-value">${currency.format(row.value)}</span></div>
     </div>`).join("");
 
-  const paymentCounts = paymentMethods.map(({ name }) =>
+  const payDefs = addNaoInformado(items.map((i) => i.paymentMethod), paymentMethods);
+  const paymentCounts = payDefs.map(({ name }) =>
     items.filter((item) => normalizeStage(item.paymentMethod) === normalizeStage(name)).length);
   const paymentTotal = paymentCounts.reduce((sum, count) => sum + count, 0);
-  byId("approved-payments").innerHTML = paymentMethods.map(({ name, color }, index) => {
+  byId("approved-payments").innerHTML = payDefs.map(({ name, color }, index) => {
     const share = paymentTotal ? (paymentCounts[index] / paymentTotal) * 100 : 25;
     return `<div class="share-part" style="--share-width:${share}%;--share-color:${color}">
       <strong>${name}</strong><span>${paymentCounts[index]} · ${paymentTotal ? share.toFixed(1) : "0.0"}%</span>
