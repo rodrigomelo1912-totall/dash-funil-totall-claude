@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Funil de Vendas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="login.css" />
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-card">
+      <div class="login-header">
+        <h1>Funil de Vendas</h1>
+        <span>Totall PI</span>
+      </div>
+      <form id="login-form" autocomplete="on">
+        <div class="form-group">
+          <label for="user">E-mail</label>
+          <input type="email" id="user" name="username" placeholder="seu@email.com" required autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label for="pass">Senha</label>
+          <input type="password" id="pass" name="password" placeholder="••••••" required autocomplete="current-password" />
+        </div>
+        <p id="login-error" class="error" hidden></p>
+        <button type="submit" class="btn-login" id="login-btn">Entrar</button>
+      </form>
+    </div>
+  </div>
+  <script>
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById("login-btn");
+      const err = document.getElementById("login-error");
+      err.hidden = true;
+      btn.disabled = true;
+      btn.textContent = "Entrando...";
+      try {
+        const res = await fetch("/api/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user: document.getElementById("user").value,
+            pass: document.getElementById("pass").value,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          window.location.href = "/";
+        } else {
+          err.textContent = data.error || "Credenciais inválidas";
+          err.hidden = false;
+        }
+      } catch {
+        err.textContent = "Erro de conexão. Tente novamente.";
+        err.hidden = false;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Entrar";
+      }
+    });
+  </script>
+</body>
+</html>
