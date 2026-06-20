@@ -1,0 +1,6 @@
+.token
+__pycache__/
+*.pyc
+.vercel
+.env
+node_modules/
