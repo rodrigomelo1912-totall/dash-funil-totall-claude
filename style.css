@@ -79,6 +79,15 @@ button { cursor: pointer; }
 }
 .btn:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgb(37 99 235 / 30%); }
 .btn:active { transform: translateY(0); }
+.btn-export {
+  background: #429369;
+  border-color: #429369;
+  box-shadow: 0 2px 8px rgb(66 147 105 / 25%);
+}
+.btn-export:hover {
+  background: #377d59;
+  box-shadow: 0 4px 12px rgb(66 147 105 / 30%);
+}
 .btn-link { border: 0; color: var(--accent); padding-inline: 3px; font-size: .82rem; }
 
 /* ── Filters ── */

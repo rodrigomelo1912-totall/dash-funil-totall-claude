@@ -373,6 +373,34 @@ async function loadData() {
   }
 }
 
+byId("export-btn").addEventListener("click", () => {
+  const items = filteredItems();
+  const header = ["Nome", "Etapa", "Responsável", "Canal", "Segmentação", "Calor", "Valor Único", "Valor Recorrente", "Total", "Início Negociação"];
+  const rows = items.map((item) => [
+    item.name,
+    item.stage,
+    item.owner,
+    item.channel,
+    item.segment,
+    item.heat,
+    item.uniqueValue,
+    item.recurringValue,
+    item.uniqueValue + item.recurringValue,
+    item.date || "",
+  ]);
+  const csvContent = [header, ...rows]
+    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(";"))
+    .join("\n");
+  const bom = "﻿";
+  const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const now = new Date();
+  a.download = `funil-vendas-${now.toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
 byId("refresh-btn").addEventListener("click", loadData);
 byId("filter-date-from").addEventListener("change", render);
 byId("filter-date-to").addEventListener("change", render);
