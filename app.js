@@ -220,7 +220,11 @@ function render() {
   byId("kpi-recorrente").textContent = currency.format(recurring);
   byId("kpi-total").textContent = currency.format(unique + recurring);
   byId("kpi-count").textContent = number.format(items.length);
-  byId("filter-summary").textContent = `${items.length} de ${state.items.length} oportunidades exibidas`;
+  const hasFilters = byId("filter-date-from").value || byId("filter-date-to").value || byId("filter-owner").value || byId("filter-segment").value;
+  byId("filter-summary").textContent = hasFilters
+    ? `${items.length} de ${state.items.length} oportunidades`
+    : `${items.length} oportunidades`;
+  document.querySelector(".filters").classList.toggle("has-filters", !!hasFilters);
 
   renderFunnel("funnel-unico", items, "uniqueValue");
   renderFunnel("funnel-recorrente", items, "recurringValue");
@@ -253,7 +257,10 @@ async function loadData() {
     state.items = data.items;
     state.board = data.board;
     byId("board-meta").textContent = `${data.board.name} · ${data.items.length} itens`;
-    byId("last-update").textContent = `Atualizado às ${new Date(data.fetchedAt).toLocaleTimeString("pt-BR")}`;
+    const updateText = `Atualizado às ${new Date(data.fetchedAt).toLocaleTimeString("pt-BR")}`;
+    byId("last-update").textContent = updateText;
+    const footerEl = byId("footer-update");
+    if (footerEl) footerEl.textContent = updateText;
 
     const ownerSelect = byId("filter-owner");
     const selected = ownerSelect.value;

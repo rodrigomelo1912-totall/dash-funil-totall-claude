@@ -4,12 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Funil de Vendas - Totall PI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-title">
-      <h1>Funil de Vendas - Totall PI</h1>
+      <h1>Funil de Vendas</h1>
       <span id="board-meta" class="muted"></span>
     </div>
     <div class="topbar-actions">
@@ -56,11 +59,15 @@
     <div class="kpi-card kpi-count"><span class="kpi-label">Oportunidades</span><span class="kpi-value" id="kpi-count">0</span></div>
   </section>
 
+  <div class="section-divider"><span>Pipeline de Vendas</span></div>
+
   <main class="funnels">
     <div class="funnel-card"><h2>Funil - Valor Único</h2><div class="funnel-body" id="funnel-unico"></div></div>
     <div class="funnel-card"><h2>Funil - Valor Recorrente</h2><div class="funnel-body" id="funnel-recorrente"></div></div>
     <div class="funnel-card"><h2>Funil - Combinado</h2><div class="funnel-body" id="funnel-combinado"></div></div>
   </main>
+
+  <div class="section-divider"><span>Análises</span></div>
 
   <main class="analytics">
     <div class="chart-card"><h2>Por Canal</h2><div class="chart-body" id="chart-canal"></div></div>
@@ -104,6 +111,11 @@
       <div class="chart-card chart-wide"><h2>Share de Forma de Pagamento</h2><div class="share-chart" id="approved-payments"></div></div>
     </div>
   </section>
+
+  <footer class="footer">
+    <span>Funil de Vendas — Totall PI</span>
+    <span id="footer-update"></span>
+  </footer>
 
   <div id="loading-overlay" class="overlay"><span>Carregando dados do monday...</span></div>
   <script src="app.js"></script>
