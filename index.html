@@ -16,7 +16,13 @@
       <span id="board-meta" class="muted"></span>
     </div>
     <div class="topbar-actions">
-      <button id="export-btn" class="btn btn-export">Exportar Relatório</button>
+      <div class="export-dropdown" id="export-dropdown">
+        <button id="export-btn" class="btn btn-export">Exportar ▾</button>
+        <div class="export-menu" id="export-menu">
+          <button id="export-pdf" class="export-option">📄 Exportar PDF</button>
+          <button id="export-csv" class="export-option">📊 Exportar CSV</button>
+        </div>
+      </div>
       <button id="refresh-btn" class="btn">Atualizar dados</button>
       <span id="last-update" class="muted"></span>
     </div>

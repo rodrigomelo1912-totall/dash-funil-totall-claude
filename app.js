@@ -373,33 +373,77 @@ async function loadData() {
   }
 }
 
-byId("export-btn").addEventListener("click", () => {
+// Export dropdown toggle
+byId("export-btn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  byId("export-menu").classList.toggle("open");
+});
+document.addEventListener("click", (e) => {
+  if (!byId("export-dropdown").contains(e.target)) byId("export-menu").classList.remove("open");
+});
+
+// CSV export
+byId("export-csv").addEventListener("click", () => {
+  byId("export-menu").classList.remove("open");
   const items = filteredItems();
-  const header = ["Nome", "Etapa", "Responsável", "Canal", "Segmentação", "Calor", "Valor Único", "Valor Recorrente", "Total", "Início Negociação"];
+  const header = ["Nome", "Etapa", "Grupo", "Responsável", "Canal", "Segmentação", "Calor", "Valor Único", "Valor Recorrente", "Total", "Início Negociação", "Tipo Pessoa", "Parcelas", "Forma Pgto"];
   const rows = items.map((item) => [
-    item.name,
-    item.stage,
-    item.owner,
-    item.channel,
-    item.segment,
-    item.heat,
-    item.uniqueValue,
-    item.recurringValue,
-    item.uniqueValue + item.recurringValue,
-    item.date || "",
+    item.name, item.stage, item.group, item.owner, item.channel, item.segment, item.heat,
+    item.uniqueValue, item.recurringValue, item.uniqueValue + item.recurringValue,
+    item.date || "", item.personType, item.installments || "", item.paymentMethod,
   ]);
   const csvContent = [header, ...rows]
     .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(";"))
     .join("\n");
-  const bom = "﻿";
-  const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["﻿" + csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  const now = new Date();
-  a.download = `funil-vendas-${now.toISOString().slice(0, 10)}.csv`;
+  a.download = `funil-vendas-${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+});
+
+// PDF export (preserves layout)
+byId("export-pdf").addEventListener("click", () => {
+  byId("export-menu").classList.remove("open");
+  byId("loading-overlay").classList.remove("hidden");
+  byId("loading-overlay").querySelector("span").innerHTML = "Gerando PDF...";
+  const script = document.createElement("script");
+  script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+  script.onload = () => {
+    const jspdfScript = document.createElement("script");
+    jspdfScript.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js";
+    jspdfScript.onload = async () => {
+      try {
+        const overlay = byId("loading-overlay");
+        overlay.classList.add("hidden");
+        const content = document.body;
+        const canvas = await html2canvas(content, {
+          scale: 1.5,
+          useCORS: true,
+          logging: false,
+          windowWidth: 1440,
+        });
+        const imgData = canvas.toDataURL("image/jpeg", 0.92);
+        const { jsPDF } = window.jspdf;
+        const pxToMm = 0.264583;
+        const pdfW = canvas.width * pxToMm;
+        const pdfH = canvas.height * pxToMm;
+        const pdf = new jsPDF({ orientation: pdfW > pdfH ? "l" : "p", unit: "mm", format: [pdfW, pdfH] });
+        pdf.addImage(imgData, "JPEG", 0, 0, pdfW, pdfH);
+        pdf.save(`funil-vendas-${new Date().toISOString().slice(0, 10)}.pdf`);
+      } catch (err) {
+        alert("Erro ao gerar PDF: " + err.message);
+      } finally {
+        const ov = byId("loading-overlay");
+        ov.querySelector("span").innerHTML = "Carregando dados do monday...";
+        ov.classList.add("hidden");
+      }
+    };
+    document.head.appendChild(jspdfScript);
+  };
+  document.head.appendChild(script);
 });
 byId("refresh-btn").addEventListener("click", loadData);
 byId("filter-date-from").addEventListener("change", render);
