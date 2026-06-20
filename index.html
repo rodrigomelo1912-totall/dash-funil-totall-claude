@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Funil de Vendas - Totall PI</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-title">
+      <h1>Funil de Vendas - Totall PI</h1>
+      <span id="board-meta" class="muted"></span>
+    </div>
+    <div class="topbar-actions">
+      <button id="refresh-btn" class="btn">Atualizar dados</button>
+      <span id="last-update" class="muted"></span>
+    </div>
+  </header>
+
+  <section class="filters">
+    <div class="filter-group">
+      <label>Início da Negociação</label>
+      <div class="filter-row">
+        <input type="date" id="filter-date-from" />
+        <span class="muted">até</span>
+        <input type="date" id="filter-date-to" />
+        <button id="clear-dates" class="btn-link">limpar</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Responsável</label>
+      <select id="filter-owner" class="select">
+        <option value="">Todos os responsáveis</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Segmentação</label>
+      <select id="filter-segment" class="select">
+        <option value="">Todas as segmentações</option>
+        <option value="Connect">Connect</option>
+        <option value="Select">Select</option>
+        <option value="Closer">Closer</option>
+        <option value="Essential">Essential</option>
+      </select>
+    </div>
+    <div class="filter-group filter-summary">
+      <span id="filter-summary" class="muted"></span>
+    </div>
+  </section>
+
+  <section class="kpis">
+    <div class="kpi-card kpi-unico"><span class="kpi-label">Total Valor Único</span><span class="kpi-value" id="kpi-unico">R$ 0,00</span></div>
+    <div class="kpi-card kpi-recorrente"><span class="kpi-label">Total Valor Recorrente</span><span class="kpi-value" id="kpi-recorrente">R$ 0,00</span></div>
+    <div class="kpi-card kpi-total"><span class="kpi-label">Total Geral</span><span class="kpi-value" id="kpi-total">R$ 0,00</span></div>
+    <div class="kpi-card kpi-count"><span class="kpi-label">Oportunidades</span><span class="kpi-value" id="kpi-count">0</span></div>
+  </section>
+
+  <main class="funnels">
+    <div class="funnel-card"><h2>Funil - Valor Único</h2><div class="funnel-body" id="funnel-unico"></div></div>
+    <div class="funnel-card"><h2>Funil - Valor Recorrente</h2><div class="funnel-body" id="funnel-recorrente"></div></div>
+    <div class="funnel-card"><h2>Funil - Combinado</h2><div class="funnel-body" id="funnel-combinado"></div></div>
+  </main>
+
+  <main class="analytics">
+    <div class="chart-card"><h2>Por Canal</h2><div class="chart-body" id="chart-canal"></div></div>
+    <div class="chart-card"><h2>Por Calor</h2><div class="chart-body" id="chart-calor"></div></div>
+    <div class="chart-card chart-wide"><h2>Evolução Mensal</h2><div class="chart-body" id="chart-evolucao"></div></div>
+  </main>
+
+  <section class="table-section">
+    <h2>Detalhamento por Etapa</h2>
+    <div class="table-scroll">
+      <table id="breakdown-table">
+        <thead><tr><th>Etapa</th><th>Qtde</th><th>Valor Único</th><th>Valor Recorrente</th><th>Total</th><th>Conversão</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="dashboard-section">
+    <div class="section-heading">
+      <h2>Comparativo entre Segmentações</h2>
+      <span class="muted">Quantidade de oportunidades por etapa</span>
+    </div>
+    <div class="chart-card chart-wide">
+      <div class="chart-legend" id="segment-legend"></div>
+      <div class="stacked-chart" id="chart-segment-stages"></div>
+    </div>
+  </section>
+
+  <section class="dashboard-section approved-section">
+    <div class="section-heading">
+      <div>
+        <h2>Itens Aprovados</h2>
+        <span class="muted">Etapa Contrato assinado · período baseado em Fim da negociação</span>
+      </div>
+      <strong id="approved-summary">0 aprovados</strong>
+    </div>
+    <div class="approved-grid">
+      <div class="chart-card"><h2>Segmentações Aprovadas</h2><div class="chart-body" id="approved-segments"></div></div>
+      <div class="chart-card"><h2>Tipo de Pessoa</h2><div class="chart-body" id="approved-person-types"></div></div>
+      <div class="chart-card chart-wide"><h2>Quantidade de Parcelas</h2><div class="dual-bars" id="approved-installments"></div></div>
+      <div class="chart-card chart-wide"><h2>Share de Forma de Pagamento</h2><div class="share-chart" id="approved-payments"></div></div>
+    </div>
+  </section>
+
+  <div id="loading-overlay" class="overlay"><span>Carregando dados do monday...</span></div>
+  <script src="app.js"></script>
+</body>
+</html>

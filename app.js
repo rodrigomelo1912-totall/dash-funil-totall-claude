@@ -1,0 +1,283 @@
+const state = { items: [], board: null };
+const byId = (id) => document.getElementById(id);
+const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+const number = new Intl.NumberFormat("pt-BR");
+const segments = [
+  { name: "Connect", color: "#0ea5e9" },
+  { name: "Select", color: "#8b5cf6" },
+  { name: "Closer", color: "#f59e0b" },
+  { name: "Essential", color: "#10b981" },
+];
+const paymentMethods = [
+  { name: "Boleto", color: "#2563eb" },
+  { name: "Pix", color: "#10b981" },
+  { name: "Cartão", color: "#8b5cf6" },
+  { name: "Ted", color: "#f59e0b" },
+];
+const monthNames = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+
+const funnelStages = [
+  { name: "Lead", color: "#d9dee5", textColor: "#273142" },
+  { name: "Viabilidade", color: "#667085", textColor: "#ffffff" },
+  { name: "Contato", color: "#fff3bf", textColor: "#5c4813" },
+  { name: "Contato 2", color: "#ffe58f", textColor: "#5c4813" },
+  { name: "Contato 3", color: "#ffd666", textColor: "#5c4813" },
+  { name: "Contato 4", color: "#d4a017", textColor: "#ffffff" },
+  { name: "Reunião agendada", color: "#ffd6e7", textColor: "#6b2145" },
+  { name: "Reunião", color: "#ffadd2", textColor: "#6b2145" },
+  { name: "No Show", color: "#eb7eb7", textColor: "#ffffff" },
+  { name: "Reunião Realizada", color: "#b83280", textColor: "#ffffff" },
+  { name: "Proposta", color: "#91d5ff", textColor: "#164e73" },
+  { name: "Proposta enviada", color: "#1677ff", textColor: "#ffffff" },
+  { name: "Confecção de contrato", color: "#d3adf7", textColor: "#3b1764" },
+  { name: "Contrato enviado", color: "#9254de", textColor: "#ffffff" },
+  { name: "Contrato em Revisão", color: "#531dab", textColor: "#ffffff" },
+  { name: "Contrato assinado", color: "#22a06b", textColor: "#ffffff" },
+];
+
+function normalizeStage(value) {
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[.\-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLocaleLowerCase("pt-BR");
+}
+
+function groupBy(items, key) {
+  return items.reduce((groups, item) => {
+    const name = item[key] || "Não informado";
+    groups[name] = groups[name] || [];
+    groups[name].push(item);
+    return groups;
+  }, {});
+}
+
+function total(items, key) {
+  return items.reduce((sum, item) => sum + item[key], 0);
+}
+
+function filterItems({ dateKey = "date", includeSegment = true } = {}) {
+  const from = byId("filter-date-from").value;
+  const to = byId("filter-date-to").value;
+  const owner = byId("filter-owner").value;
+  const segment = byId("filter-segment").value;
+  return state.items.filter((item) => {
+    const date = item[dateKey]?.slice(0, 10);
+    return (!from || (date && date >= from)) &&
+      (!to || (date && date <= to)) &&
+      (!owner || item.owner === owner) &&
+      (!includeSegment || !segment || normalizeStage(item.segment) === normalizeStage(segment));
+  });
+}
+
+function filteredItems() {
+  return filterItems();
+}
+
+function approvedItems(includeSegment = true) {
+  return filterItems({ dateKey: "endDate", includeSegment })
+    .filter((item) => normalizeStage(item.stage) === normalizeStage("Contrato assinado"));
+}
+
+function renderFunnel(id, items, valueKey) {
+  const groups = items.reduce((result, item) => {
+    const stage = normalizeStage(item.stage);
+    result[stage] = result[stage] || [];
+    result[stage].push(item);
+    return result;
+  }, {});
+
+  byId(id).innerHTML = funnelStages.map((stage, index) => {
+      const rows = groups[normalizeStage(stage.name)] || [];
+      const value = total(rows, valueKey);
+      const width = 100 - index * 3.5;
+      return `<div class="funnel-step" style="--step-width:${width}%;--step-color:${stage.color};--step-text:${stage.textColor}">
+        <strong>${escapeHtml(stage.name)}</strong>
+        <span>${number.format(rows.length)} oportunidades · ${currency.format(value)}</span>
+      </div>`;
+    }).join("");
+}
+
+function renderBars(id, groups, valueFn = (rows) => rows.length, format = number.format) {
+  const entries = Object.entries(groups).sort((a, b) => valueFn(b[1]) - valueFn(a[1]));
+  const maximum = Math.max(...entries.map(([, rows]) => valueFn(rows)), 1);
+  byId(id).innerHTML = entries.length
+    ? entries.map(([name, rows]) => {
+      const value = valueFn(rows);
+      return `<div class="bar-row"><span title="${escapeHtml(name)}">${escapeHtml(name)}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${(value / maximum) * 100}%"></div></div>
+        <strong>${format(value)}</strong></div>`;
+    }).join("")
+    : '<span class="muted">Nenhum dado para exibir.</span>';
+}
+
+function renderFixedBars(id, items, definitions) {
+  const maximum = Math.max(...definitions.map(({ name }) =>
+    items.filter((item) => normalizeStage(item) === normalizeStage(name)).length), 1);
+  byId(id).innerHTML = definitions.map(({ name, color }) => {
+    const count = items.filter((item) => normalizeStage(item) === normalizeStage(name)).length;
+    return `<div class="bar-row"><span>${escapeHtml(name)}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${(count / maximum) * 100}%;background:${color}"></div></div>
+      <strong>${number.format(count)}</strong></div>`;
+  }).join("");
+}
+
+function lastTwelveMonths() {
+  const months = [];
+  const now = new Date();
+  for (let offset = 11; offset >= 0; offset -= 1) {
+    const date = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+    months.push({
+      key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
+      label: `${monthNames[date.getMonth()]}${String(date.getFullYear()).slice(-2)}`,
+    });
+  }
+  return months;
+}
+
+function renderMonthlyEvolution(items) {
+  const months = lastTwelveMonths();
+  const groups = groupBy(items.filter((item) => item.date)
+    .map((item) => ({ ...item, month: item.date.slice(0, 7) })), "month");
+  const values = months.map(({ key }) => total(groups[key] || [], "uniqueValue") + total(groups[key] || [], "recurringValue"));
+  const maximum = Math.max(...values, 1);
+  byId("chart-evolucao").innerHTML = months.map(({ label }, index) =>
+    `<div class="bar-row"><span>${label}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${(values[index] / maximum) * 100}%"></div></div>
+      <strong>${currency.format(values[index])}</strong></div>`).join("");
+}
+
+function renderSegmentComparison(items) {
+  byId("segment-legend").innerHTML = segments.map(({ name, color }) =>
+    `<span class="legend-item"><span class="legend-dot" style="--legend-color:${color}"></span>${name}</span>`).join("");
+
+  byId("chart-segment-stages").innerHTML = funnelStages.map((stage) => {
+    const counts = segments.map(({ name }) => items.filter((item) =>
+      normalizeStage(item.stage) === normalizeStage(stage.name) &&
+      normalizeStage(item.segment) === normalizeStage(name)).length);
+    const stageTotal = counts.reduce((sum, count) => sum + count, 0);
+    return `<div class="stacked-row"><span>${escapeHtml(stage.name)}</span>
+      <div class="stacked-track">${segments.map(({ color }, index) => {
+        const width = stageTotal ? (counts[index] / stageTotal) * 100 : 0;
+        return `<span class="stacked-part" style="width:${width}%;--stack-color:${color}">${counts[index] || ""}</span>`;
+      }).join("")}</div><strong>${number.format(stageTotal)}</strong></div>`;
+  }).join("");
+}
+
+function renderApproved(items, comparisonItems) {
+  const combined = (item) => item.uniqueValue + item.recurringValue;
+  byId("approved-summary").textContent = `${number.format(items.length)} aprovados · ${currency.format(items.reduce((sum, item) => sum + combined(item), 0))}`;
+  renderFixedBars("approved-segments", comparisonItems.map((item) => item.segment), segments);
+  renderFixedBars("approved-person-types", items.map((item) => item.personType), [
+    { name: "Pessoa física", color: "#0ea5e9" },
+    { name: "Pessoa jurídica", color: "#8b5cf6" },
+  ]);
+
+  const installmentRows = Array.from({ length: 12 }, (_, index) => {
+    const installment = index + 1;
+    const rows = items.filter((item) => item.installments === installment);
+    return { installment, count: rows.length, value: rows.reduce((sum, item) => sum + combined(item), 0) };
+  });
+  const maxCount = Math.max(...installmentRows.map((row) => row.count), 1);
+  const maxValue = Math.max(...installmentRows.map((row) => row.value), 1);
+  byId("approved-installments").innerHTML = installmentRows.map((row) =>
+    `<div class="dual-row"><strong>${row.installment}x</strong>
+      <div class="dual-track"><div class="dual-fill" style="--bar-width:${(row.count / maxCount) * 100}%;--bar-color:#0ea5e9"></div><span class="dual-value">${row.count} itens</span></div>
+      <div class="dual-track"><div class="dual-fill" style="--bar-width:${(row.value / maxValue) * 100}%;--bar-color:#10b981"></div><span class="dual-value">${currency.format(row.value)}</span></div>
+    </div>`).join("");
+
+  const paymentCounts = paymentMethods.map(({ name }) =>
+    items.filter((item) => normalizeStage(item.paymentMethod) === normalizeStage(name)).length);
+  const paymentTotal = paymentCounts.reduce((sum, count) => sum + count, 0);
+  byId("approved-payments").innerHTML = paymentMethods.map(({ name, color }, index) => {
+    const share = paymentTotal ? (paymentCounts[index] / paymentTotal) * 100 : 25;
+    return `<div class="share-part" style="--share-width:${share}%;--share-color:${color}">
+      <strong>${name}</strong><span>${paymentCounts[index]} · ${paymentTotal ? share.toFixed(1) : "0.0"}%</span>
+    </div>`;
+  }).join("");
+}
+
+function renderTable(items) {
+  const groups = Object.entries(groupBy(items, "stage"));
+  const leadCount = groups.find(([stage]) => stage.toLocaleLowerCase("pt-BR").includes("lead"))?.[1].length || 0;
+  byId("breakdown-table").querySelector("tbody").innerHTML = groups.map(([stage, rows]) => {
+    const unique = total(rows, "uniqueValue");
+    const recurring = total(rows, "recurringValue");
+    const conversion = leadCount ? `${((rows.length / leadCount) * 100).toFixed(1)}%` : "-";
+    return `<tr><td>${escapeHtml(stage)}</td><td>${number.format(rows.length)}</td>
+      <td>${currency.format(unique)}</td><td>${currency.format(recurring)}</td>
+      <td>${currency.format(unique + recurring)}</td><td>${conversion}</td></tr>`;
+  }).join("");
+}
+
+function render() {
+  const items = filteredItems();
+  const unique = total(items, "uniqueValue");
+  const recurring = total(items, "recurringValue");
+  byId("kpi-unico").textContent = currency.format(unique);
+  byId("kpi-recorrente").textContent = currency.format(recurring);
+  byId("kpi-total").textContent = currency.format(unique + recurring);
+  byId("kpi-count").textContent = number.format(items.length);
+  byId("filter-summary").textContent = `${items.length} de ${state.items.length} oportunidades exibidas`;
+
+  renderFunnel("funnel-unico", items, "uniqueValue");
+  renderFunnel("funnel-recorrente", items, "recurringValue");
+  renderFunnel("funnel-combinado", items.map((item) => ({ ...item, combined: item.uniqueValue + item.recurringValue })), "combined");
+  renderBars("chart-canal", groupBy(items, "channel"));
+  renderBars("chart-calor", groupBy(items, "heat"));
+
+  renderMonthlyEvolution(items);
+  renderTable(items);
+  renderSegmentComparison(filterItems({ includeSegment: false }));
+  renderApproved(approvedItems(), approvedItems(false));
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;",
+  })[char]);
+}
+
+async function loadData() {
+  byId("loading-overlay").classList.remove("hidden");
+  try {
+    const response = await fetch("/api/monday");
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      throw new Error("API indisponível. Publique na Vercel ou execute com `vercel dev`.");
+    }
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || data.error);
+    state.items = data.items;
+    state.board = data.board;
+    byId("board-meta").textContent = `${data.board.name} · ${data.items.length} itens`;
+    byId("last-update").textContent = `Atualizado às ${new Date(data.fetchedAt).toLocaleTimeString("pt-BR")}`;
+
+    const ownerSelect = byId("filter-owner");
+    const selected = ownerSelect.value;
+    const owners = [...new Set(state.items.map((item) => item.owner))].sort();
+    ownerSelect.innerHTML = '<option value="">Todos os responsáveis</option>' +
+      owners.map((owner) => `<option value="${escapeHtml(owner)}">${escapeHtml(owner)}</option>`).join("");
+    ownerSelect.value = selected;
+    render();
+  } catch (error) {
+    byId("board-meta").innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`;
+  } finally {
+    byId("loading-overlay").classList.add("hidden");
+  }
+}
+
+byId("refresh-btn").addEventListener("click", loadData);
+byId("filter-date-from").addEventListener("change", render);
+byId("filter-date-to").addEventListener("change", render);
+byId("filter-owner").addEventListener("change", render);
+byId("filter-segment").addEventListener("change", render);
+byId("clear-dates").addEventListener("click", () => {
+  byId("filter-date-from").value = "";
+  byId("filter-date-to").value = "";
+  render();
+});
+
+loadData();
