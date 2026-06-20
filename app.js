@@ -35,6 +35,21 @@ const funnelStages = [
   { name: "Contrato assinado", color: "#22a06b", textColor: "#ffffff" },
 ];
 
+const funnelGroups = [
+  { label: "Lead", color: "#8c939e", textColor: "#ffffff",
+    stages: ["Lead", "Viabilidade"] },
+  { label: "Contato", color: "#e8b800", textColor: "#3d2e00",
+    stages: ["Contato", "Contato 2", "Contato 3", "Contato 4"] },
+  { label: "Reunião", color: "#d94890", textColor: "#ffffff",
+    stages: ["Reunião agendada", "Reunião", "No Show", "Reunião Realizada"] },
+  { label: "Proposta", color: "#1677ff", textColor: "#ffffff",
+    stages: ["Proposta", "Proposta enviada"] },
+  { label: "Contrato", color: "#7c3aed", textColor: "#ffffff",
+    stages: ["Confecção de contrato", "Contrato enviado", "Contrato em Revisão"] },
+  { label: "Aprovado", color: "#22a06b", textColor: "#ffffff",
+    stages: ["Contrato assinado"] },
+];
+
 function normalizeStage(value) {
   return String(value)
     .normalize("NFD")
@@ -82,22 +97,43 @@ function approvedItems(includeSegment = true) {
 }
 
 function renderFunnel(id, items, valueKey) {
-  const groups = items.reduce((result, item) => {
+  const stageMap = items.reduce((result, item) => {
     const stage = normalizeStage(item.stage);
     result[stage] = result[stage] || [];
     result[stage].push(item);
     return result;
   }, {});
 
-  byId(id).innerHTML = funnelStages.map((stage, index) => {
-      const rows = groups[normalizeStage(stage.name)] || [];
-      const value = total(rows, valueKey);
-      const width = 100 - index * 3.5;
-      return `<div class="funnel-step" style="--step-width:${width}%;--step-color:${stage.color};--step-text:${stage.textColor}">
-        <strong>${escapeHtml(stage.name)}</strong>
-        <span>${number.format(rows.length)} oportunidades · ${currency.format(value)}</span>
+  const funnelId = id.replace(/[^a-z0-9]/gi, "");
+
+  byId(id).innerHTML = funnelGroups.map((group, gi) => {
+    const allRows = group.stages.flatMap((s) => stageMap[normalizeStage(s)] || []);
+    const groupValue = total(allRows, valueKey);
+    const width = 100 - gi * 8;
+    const expandId = `${funnelId}_g${gi}`;
+    const hasChildren = group.stages.length > 1;
+
+    const subStages = hasChildren ? group.stages.map((stageName, si) => {
+      const matchingStage = funnelStages.find((fs) => normalizeStage(fs.name) === normalizeStage(stageName));
+      const rows = stageMap[normalizeStage(stageName)] || [];
+      const val = total(rows, valueKey);
+      const subWidth = width - 2 - si * 2;
+      return `<div class="funnel-step funnel-sub" style="--step-width:${subWidth}%;--step-color:${matchingStage?.color || group.color};--step-text:${matchingStage?.textColor || group.textColor}">
+        <strong>${escapeHtml(stageName)}</strong>
+        <span>${number.format(rows.length)} op. · ${currency.format(val)}</span>
       </div>`;
-    }).join("");
+    }).join("") : "";
+
+    return `<div class="funnel-group">
+      <div class="funnel-step funnel-step-group${hasChildren ? " expandable" : ""}" style="--step-width:${width}%;--step-color:${group.color};--step-text:${group.textColor}"
+        ${hasChildren ? `onclick="document.getElementById('${expandId}').classList.toggle('expanded'); this.classList.toggle('is-expanded')"` : ""}>
+        ${hasChildren ? '<span class="funnel-arrow">&#9654;</span>' : ""}
+        <strong>${escapeHtml(group.label)}</strong>
+        <span>${number.format(allRows.length)} oportunidades · ${currency.format(groupValue)}</span>
+      </div>
+      ${hasChildren ? `<div class="funnel-children" id="${expandId}">${subStages}</div>` : ""}
+    </div>`;
+  }).join("");
 }
 
 function renderBars(id, groups, valueFn = (rows) => rows.length, format = number.format) {

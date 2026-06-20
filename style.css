@@ -211,6 +211,45 @@ button { cursor: pointer; }
 .funnel-step strong { font-size: .78rem; }
 .funnel-step span { margin-top: 3px; font-size: .68rem; font-weight: 650; opacity: .9; }
 
+/* ── Funnel Groups (collapsible) ── */
+.funnel-group { display: flex; flex-direction: column; gap: 0; }
+.funnel-step-group { cursor: default; position: relative; min-height: 60px; }
+.funnel-step-group.expandable { cursor: pointer; }
+.funnel-step-group.expandable:hover { filter: brightness(.92) saturate(1.15); }
+.funnel-step-group strong { font-size: .85rem; }
+.funnel-arrow {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%) rotate(0deg);
+  font-size: .6rem;
+  opacity: .7;
+  transition: transform .25s ease;
+}
+.funnel-step-group.is-expanded .funnel-arrow {
+  transform: translateY(-50%) rotate(90deg);
+}
+.funnel-children {
+  display: grid;
+  gap: 2px;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height .35s ease, opacity .25s ease, margin .25s ease;
+  margin-top: 0;
+}
+.funnel-children.expanded {
+  max-height: 500px;
+  opacity: 1;
+  margin-top: 3px;
+}
+.funnel-sub {
+  min-height: 40px;
+  padding: 4px 20px;
+}
+.funnel-sub strong { font-size: .72rem; }
+.funnel-sub span { font-size: .62rem; }
+
 /* ── Analytics ── */
 .analytics {
   display: grid;
