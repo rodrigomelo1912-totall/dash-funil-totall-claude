@@ -200,10 +200,27 @@ function renderPieChart(id, items, definitions) {
     </div>`;
 }
 
+function renderValueBars(id, items, definitions) {
+  const rows = definitions.map(({ name, color }) => {
+    const matching = items.filter((item) => normalizeStage(item.segment) === normalizeStage(name));
+    const uniqueVal = matching.reduce((sum, item) => sum + item.uniqueValue, 0);
+    const recurringVal = matching.reduce((sum, item) => sum + item.recurringValue, 0);
+    return { name, color, count: matching.length, unique: uniqueVal, recurring: recurringVal, total: uniqueVal + recurringVal };
+  });
+  const maxVal = Math.max(...rows.map((r) => r.total), 1);
+  byId(id).innerHTML = rows.map((row) =>
+    `<div class="bar-row">
+      <span title="${escapeHtml(row.name)}">${escapeHtml(row.name)}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${(row.total / maxVal) * 100}%;background:linear-gradient(90deg, ${row.color}, ${row.color}cc)"></div></div>
+      <strong>${currency.format(row.total)}</strong>
+    </div>`).join("") || '<span class="muted">Sem dados.</span>';
+}
+
 function renderApproved(items, comparisonItems) {
   const combined = (item) => item.uniqueValue + item.recurringValue;
   byId("approved-summary").textContent = `${number.format(items.length)} aprovados · ${currency.format(items.reduce((sum, item) => sum + combined(item), 0))}`;
-  renderFixedBars("approved-segments", comparisonItems.map((item) => item.segment), segments);
+  renderPieChart("approved-segments-pie", comparisonItems.map((item) => item.segment), segments);
+  renderValueBars("approved-segments-bars", comparisonItems, segments);
   renderPieChart("approved-person-types", items.map((item) => item.personType), [
     { name: "Pessoa física", color: "#9b59b6" },
     { name: "Pessoa jurídica", color: "#1a3a5c" },
