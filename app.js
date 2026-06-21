@@ -404,46 +404,10 @@ byId("export-csv").addEventListener("click", () => {
   URL.revokeObjectURL(url);
 });
 
-// PDF export (preserves layout)
+// PDF export (native print dialog — fast, preserves layout)
 byId("export-pdf").addEventListener("click", () => {
   byId("export-menu").classList.remove("open");
-  byId("loading-overlay").classList.remove("hidden");
-  byId("loading-overlay").querySelector("span").innerHTML = "Gerando PDF...";
-  const script = document.createElement("script");
-  script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-  script.onload = () => {
-    const jspdfScript = document.createElement("script");
-    jspdfScript.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js";
-    jspdfScript.onload = async () => {
-      try {
-        const overlay = byId("loading-overlay");
-        overlay.classList.add("hidden");
-        const content = document.body;
-        const canvas = await html2canvas(content, {
-          scale: 1.5,
-          useCORS: true,
-          logging: false,
-          windowWidth: 1440,
-        });
-        const imgData = canvas.toDataURL("image/jpeg", 0.92);
-        const { jsPDF } = window.jspdf;
-        const pxToMm = 0.264583;
-        const pdfW = canvas.width * pxToMm;
-        const pdfH = canvas.height * pxToMm;
-        const pdf = new jsPDF({ orientation: pdfW > pdfH ? "l" : "p", unit: "mm", format: [pdfW, pdfH] });
-        pdf.addImage(imgData, "JPEG", 0, 0, pdfW, pdfH);
-        pdf.save(`funil-vendas-${new Date().toISOString().slice(0, 10)}.pdf`);
-      } catch (err) {
-        alert("Erro ao gerar PDF: " + err.message);
-      } finally {
-        const ov = byId("loading-overlay");
-        ov.querySelector("span").innerHTML = "Carregando dados do monday...";
-        ov.classList.add("hidden");
-      }
-    };
-    document.head.appendChild(jspdfScript);
-  };
-  document.head.appendChild(script);
+  window.print();
 });
 byId("refresh-btn").addEventListener("click", loadData);
 byId("filter-date-from").addEventListener("change", render);
